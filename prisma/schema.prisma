@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String               @id @default(cuid())
+  email          String               @unique
+  password       String
+  name           String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  events         Event[]              @relation("UserEvents")
+  registrations  EventRegistration[]  @relation("UserRegistrations")
+  sessions       Session[]            @relation("UserSessions")
+}
+
+model Event {
+  id             String               @id @default(cuid())
+  title          String
+  description    String
+  date           DateTime
+  location       String
+  capacity       Int
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  userId         String
+  user           User                 @relation("UserEvents", fields: [userId], references: [id])
+  registrations  EventRegistration[]  @relation("EventRegistrations")
+}
+
+model EventRegistration {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  eventId   String
+  userId    String
+  event     Event    @relation("EventRegistrations", fields: [eventId], references: [id])
+  user      User     @relation("UserRegistrations", fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserSessions", fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+} 
