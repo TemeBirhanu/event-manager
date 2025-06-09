@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms/server';
 import { registerSchema } from '$lib/schemas';
-import { prisma } from '$lib/server/db';
+import { findUserByEmail, createUser } from '$lib/server/db';
 import bcrypt from 'bcrypt';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { z } from 'zod';
@@ -23,26 +23,19 @@ export const actions = {
         try {
             const { email, password, name } = form.data as z.infer<typeof registerSchema>;
 
-            const existingUser = await prisma.user.findUnique({
-                where: { email }
-            });
+            const existingUser = await findUserByEmail(email);
 
             if (existingUser) {
                 return fail(400, {
                     form,
+                    success:false,
                     message: 'User already exists'
                 });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            await prisma.user.create({
-                data: {
-                    email,
-                    password: hashedPassword,
-                    name
-                }
-            });
+            await createUser(email, hashedPassword, name);
 
             return {
                 form,
@@ -50,6 +43,7 @@ export const actions = {
                 message: 'Registration successful! Please log in.'
             };
         } catch (error) {
+            console.error('Registration error:', error);
             return fail(500, {
                 form,
                 message: 'An error occurred during registration'

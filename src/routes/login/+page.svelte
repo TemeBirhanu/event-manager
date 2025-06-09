@@ -2,8 +2,14 @@
     import type { PageData } from './$types';
     import AuthForm from '$lib/components/AuthForm.svelte';
     import FormInput from '$lib/components/FormInput.svelte';
+    import { superForm } from 'sveltekit-superforms/client';
+    import type { SuperValidated } from 'sveltekit-superforms';
+    import type { z } from 'zod';
+    import { loginSchema } from '$lib/schemas';
 
-    export let data: PageData;
+    type LoginFormData = z.infer<typeof loginSchema>;
+    export let data: PageData & { form: SuperValidated<LoginFormData> };
+    const { form, errors } = superForm(data.form);
 
     const alternateLink = {
         text: "Don't have an account?",
@@ -50,7 +56,7 @@
                 Remember me
             </label>
         </div>
-        <a href="#" class="text-sm text-blue-500 hover:text-blue-600">
+        <a href="/" class="text-sm text-blue-500 hover:text-blue-600">
             Forgot password?
         </a>
     </div>

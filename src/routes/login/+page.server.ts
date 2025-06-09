@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms/server';
 import { loginSchema } from '$lib/schemas';
-import { prisma } from '$lib/server/db';
+import { findUserByEmail, createSession } from '$lib/server/db';
 import bcrypt from 'bcrypt';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { z } from 'zod';
@@ -23,9 +23,7 @@ export const actions = {
         try {
             const { email, password } = form.data as z.infer<typeof loginSchema>;
 
-            const user = await prisma.user.findUnique({
-                where: { email }
-            });
+            const user = await findUserByEmail(email);
 
             if (!user) {
                 return fail(401, { 
@@ -44,14 +42,9 @@ export const actions = {
             }
 
             // Set session cookie
-            const session = await prisma.session.create({
-                data: {
-                    userId: user.id,
-                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-                }
-            });
+            const session = await createSession(user.id);
 
-            cookies.set('sessionId', session.id, {
+            cookies.set('sessionId', session.id.toString(), {
                 path: '/',
                 httpOnly: true,
                 sameSite: 'strict',

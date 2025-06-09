@@ -18,7 +18,9 @@
 </script>
 
 <form method="POST" use:enhance class="space-y-6">
-    <Alert message={$form.message} type={$form.success ? 'success' : 'error'} />
+    {#if $form.message}
+        <Alert message={$form.message} type={$form.success ? 'success' : 'error'} />
+    {/if}
 
     <FormInput
         id="title"

@@ -1,54 +1,36 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms/server';
 import { eventSchema } from '$lib/schemas';
-import { prisma } from '$lib/server/db';
-import type { Actions, PageServerLoad } from './$types';
+import { createEvent } from '$lib/server/db';
 import { zod } from 'sveltekit-superforms/adapters';
+import type { PageServerLoad, RequestEvent } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
-    const session = await locals.auth();
-    if (!session?.user) {
-        throw new Error('Unauthorized');
-    }
-
+export const load: PageServerLoad = async () => {
     const form = await superValidate(zod(eventSchema));
     return { form };
 };
 
-export const actions: Actions = {
-    default: async ({ request, locals }) => {
-        const session = await locals.auth();
-        if (!session?.user) {
-            throw new Error('Unauthorized');
-        }
-
+export const actions = {
+    default: async ({ request, locals }: RequestEvent) => {
         const form = await superValidate(request, zod(eventSchema));
+
         if (!form.valid) {
             return fail(400, { form });
         }
 
         try {
-            const eventData = {
+            await createEvent({
                 ...form.data,
-                date: new Date(form.data.date),
-                userId: session.user.id
-            };
-
-            const event = await prisma.event.create({
-                data: eventData
+                creatorId: locals.user.id
             });
-
-            return {
-                form,
-                success: true,
-                message: 'Event created successfully'
-            };
         } catch (error) {
             console.error('Error creating event:', error);
-            return fail(500, {
+            return fail(500, { 
                 form,
-                message: 'Failed to create event'
+                message: 'An error occurred while creating the event'
             });
         }
+
+        throw redirect(303, '/events?tab=my');
     }
-}; 
+};

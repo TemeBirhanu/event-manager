@@ -1,6 +1,4 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
-import type { User } from '@prisma/client';
+
 
 declare global {
 	namespace App {
@@ -12,6 +10,13 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+}
+
+declare module '$env/static/private' {
+	export const DB_HOST: string;
+	export const DB_USER: string;
+	export const DB_PASSWORD: string;
+	export const DB_DATABASE: string;
 }
 
 export {};

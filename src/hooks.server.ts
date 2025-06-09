@@ -1,24 +1,33 @@
-import { prisma } from '$lib/server/db';
 import type { Handle } from '@sveltejs/kit';
-import type { User } from '@prisma/client';
+import { findSessionById } from '$lib/server/db';
+
+type User = {
+    id: string;
+    email: string;
+    name: string;
+    password: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
 
 export const handle: Handle = async ({ event, resolve }) => {
+    if (event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+        return new Response(null, { status: 204 });
+    }
+
     const sessionId = event.cookies.get('sessionId');
 
     if (sessionId) {
-        const session = await prisma.session.findUnique({
-            where: { id: sessionId },
-            include: { user: true }
-        });
-
-        if (session && session.expiresAt > new Date()) {
-            event.locals.user = session.user;
-        } else if (session) {
-            // Delete expired session
-            await prisma.session.delete({
-                where: { id: sessionId }
-            });
-            event.locals.user = null;
+        const session = await findSessionById(sessionId);
+        if (session) {
+            event.locals.user = {
+                id: session.user_id,
+                email: session.email,
+                name: session.name,
+                password: session.password,
+                createdAt: new Date(session.created_at),
+                updatedAt: new Date(session.updated_at)
+            };
         }
     }
 
@@ -28,7 +37,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 declare global {
     namespace App {
         interface Locals {
-            auth(): Promise<{ user: any } | null>;
+            user: User | null;
         }
     }
 }

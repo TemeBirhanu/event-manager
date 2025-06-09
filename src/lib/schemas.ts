@@ -16,14 +16,14 @@ export const loginSchema = z.object({
 });
 
 export const eventSchema = z.object({
-    title: z.string().min(3, 'Title must be at least 3 characters'),
-    description: z.string().min(10, 'Description must be at least 10 characters'),
-    date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: 'Invalid date format'
-    }),
-    location: z.string().min(3, 'Location must be at least 3 characters'),
-    capacity: z.number().min(1, 'Capacity must be at least 1')
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().min(1, 'Description is required'),
+    date: z.string().min(1, 'Date is required'),
+    location: z.string().min(1, 'Location is required'),
+    capacity: z.number().min(1, 'Capacity must be at least 1'),
+    creatorId: z.string().optional()
 });
 
 export type RegisterSchema = typeof registerSchema;
-export type LoginSchema = typeof loginSchema; 
+export type LoginSchema = typeof loginSchema;
+export type EventSchema = typeof eventSchema; 

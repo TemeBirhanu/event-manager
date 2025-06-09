@@ -3,7 +3,7 @@
     export let name: string;
     export let label: string;
     export let type: string = 'text';
-    export let value: string = '';
+    export let value: string | number = '';
     export let errors: string[] = [];
     export let required: boolean = false;
     export let placeholder: string = '';

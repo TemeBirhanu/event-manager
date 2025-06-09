@@ -14,11 +14,15 @@
         resetForm: true,
         onResult: ({ result }) => {
             console.log('Full result:', result);
-            if (result.type === 'success' && result.data?.success) {
-                message = result.data.message;
-                setTimeout(() => {
-                    goto('/login');
-                }, 6000);
+            if (result.type === 'success') {
+                message = result.data?.message || '';
+                if (result.data?.success) {
+                    setTimeout(() => {
+                        goto('/login');
+                    }, 6000);
+                }
+            } else if (result.type === 'failure') {
+                message = result.data?.message || '';
             }
         }
     });

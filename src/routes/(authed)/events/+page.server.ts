@@ -1,35 +1,56 @@
 import { error } from '@sveltejs/kit';
-import { prisma } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
+import { getAllEvents, getUserEvents, getUserRegisteredEvents } from '$lib/server/db';
 
-export const load: PageServerLoad = async ({ locals }) => {
-    const session = await locals.auth();
-    if (!session?.user) {
-        throw error(401, 'Unauthorized');
-    }
+export const load: PageServerLoad = async ({ locals, url }) => {
+    const tab = url.searchParams.get('tab') || 'all';
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = 9;
+    const offset = (page - 1) * limit;
+
+    let events;
+    let total;
 
     try {
-        const events = await prisma.event.findMany({
-            where: {
-                userId: session.user.id
-            },
-            orderBy: {
-                date: 'asc'
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true
-                    }
+        if (tab === 'my') {
+            const [createdEvents, registeredEvents] = await Promise.all([
+                getUserEvents(locals.user.id),
+                getUserRegisteredEvents(locals.user.id)
+            ]);
+
+            const uniqueEvents = new Map();
+            
+            createdEvents.forEach(event => {
+                uniqueEvents.set(event.id, { ...event, isCreator: true });
+            });
+
+            registeredEvents.forEach(event => {
+                if (!uniqueEvents.has(event.id)) {
+                    uniqueEvents.set(event.id, { ...event, isCreator: false });
                 }
-            }
-        });
+            });
+            events = Array.from(uniqueEvents.values());
+            total = events.length;
+            events = events.slice(offset, offset + limit);
+        } else {
+            const allEvents = await getAllEvents(locals.user?.id);
+            events = allEvents.map(event => ({
+                ...event,
+                isCreator: event.creator_id === locals.user?.id
+            }));
+            total = events.length;
+            events = events.slice(offset, offset + limit);
+        }
 
         return {
-            events: events.map(event => ({
-                ...event,
-                date: event.date.toISOString()
-            }))
+            events,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                total
+            },
+            tab,
+            user: locals.user
         };
     } catch (err) {
         console.error('Error loading events:', err);
