@@ -1,13 +1,5 @@
 import mysql from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-import { DB_HOST, DB_USER, DB_PASSWORD, DB_DATABASE } from '$env/static/private';
-
-console.log('DB Config:', {
-    host: DB_HOST,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_DATABASE
-});
 
 const pool = mysql.createPool({
     host: '192.168.56.102',
